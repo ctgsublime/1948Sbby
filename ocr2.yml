@@ -4,8 +4,6 @@ type: rule
 severity: medium
 authors:
   - "Security Team"
-references:
-  - "https://docs.sublimesecurity.com"
 
 source: |
   type.inbound
@@ -14,43 +12,23 @@ source: |
       .file_type in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp")
       or .file_extension in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp")
     )
-    and any(ml.ocr(.).strings,
-      regex.icontains(.,
-        // Threats and violence
-        '(kill|murder|shoot|bomb|attack|destroy|hurt|harm)\s+(you|your|them|everyone)',
-        
-        // Explicit threats
-        'i(\s|\')?ll\s+(kill|hurt|get|find)\s+you',
-        'you(\s|\')?re\s+dead',
-        'watch\s+your\s+back',
-        
-        // Harassment and slurs (add specific terms as needed)
-        '\b(threat|die|死|殺)\b',
-        
-        // Extortion language
-        '(pay|send)\s+(money|bitcoin|crypto|btc)',
-        'or\s+else',
-        'consequences',
-        
-        // Explicit content indicators
-        'explicit',
-        'nsfw',
-        '18\+',
-        'xxx'
-      )
+    and (
+      // Threats and violence
+      regex.icontains(beta.ocr_text(.), '(kill|murder|shoot|bomb|attack|destroy)\s+(you|your|them)')
+      or regex.icontains(beta.ocr_text(.), 'i.ll\s+(kill|hurt|get|find)\s+you')
+      or regex.icontains(beta.ocr_text(.), 'you.re\s+dead')
+      or regex.icontains(beta.ocr_text(.), 'watch\s+your\s+back')
+      
+      // Extortion language
+      or regex.icontains(beta.ocr_text(.), '(pay|send)\s+(money|bitcoin|crypto|btc)')
+      or regex.icontains(beta.ocr_text(.), 'or\s+else')
+      
+      // Explicit content indicators
+      or regex.icontains(beta.ocr_text(.), '\b(nsfw|xxx|explicit)\b')
     )
   )
 
 tags:
   - "Attack Type: Harassment"
   - "Attack Type: Threat"
-  - "Attack Type: Offensive Content"
   - "Detection: OCR"
-
-attack_types:
-  - "Harassment"
-  - "Threat"
-  
-tactics_and_techniques:
-  - "T1566: Phishing"
-  - "T1204: User Execution"
