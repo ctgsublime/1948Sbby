@@ -1,76 +1,56 @@
-name: "OCR Detection - Offensive and Threatening Image Content"
-description: "Detects offensive, threatening, or inappropriate text within images using OCR analysis"
+name: "OCR Detection - Offensive Content in Images"
+description: "Scans images in emails using OCR to detect offensive, threatening, or inappropriate text content"
 type: rule
-severity: high
+severity: medium
 authors:
   - "Security Team"
+references:
+  - "https://docs.sublimesecurity.com"
 
 source: |
   type.inbound
-  and (
-    // Check attachments
-    any(attachments,
-      (
-        .file_type in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "pdf")
-        or .file_extension in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "pdf")
-      )
-      and (
-        // Offensive content detection
-        any(ml.ocr(.).strings,
-          (
-            // Direct threats
-            regex.icontains(., 
-              '(i\s+will|gonna|going\s+to)\s+(kill|hurt|destroy|end)\s+(you|your)',
-              'you.{0,20}(dead|die|killed)',
-              '(bomb|shoot|stab|attack)\s+(you|your|the)',
-              'blood\s+on\s+your\s+hands'
-            )
-            or
-            // Harassment patterns
-            regex.icontains(.,
-              'you.{0,10}(worthless|pathetic|disgusting|deserve)',
-              '(hate|despise)\s+you',
-              'kill\s+yourself'
-            )
-            or
-            // Extortion/blackmail
-            regex.icontains(.,
-              '(send|transfer|pay).{0,30}(bitcoin|btc|crypto|money|cash)',
-              '(or|otherwise).{0,20}(release|publish|share|expose)',
-              'i\s+have.{0,20}(photos|videos|evidence|proof)',
-              'within\s+\d+\s+(hours|days)'
-            )
-            or
-            // Explicit content markers
-            regex.icontains(.,
-              '\b(nsfw|xxx|porn|nude|naked)\b',
-              'explicit\s+content',
-              '18\s*\+\s*only'
-            )
-          )
-        )
-        // Confidence threshold for OCR results
-        and length(ml.ocr(.).strings) > 0
-      )
+  and any(attachments,
+    (
+      .file_type in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp")
+      or .file_extension in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp")
     )
-    or
-    // Check inline images in body
-    any(body.links,
-      .href_url.domain.tld in~ ("jpg", "jpeg", "png", "gif", "webp")
+    and any(ml.ocr(.).strings,
+      regex.icontains(.,
+        // Threats and violence
+        '(kill|murder|shoot|bomb|attack|destroy|hurt|harm)\s+(you|your|them|everyone)',
+        
+        // Explicit threats
+        'i(\s|\')?ll\s+(kill|hurt|get|find)\s+you',
+        'you(\s|\')?re\s+dead',
+        'watch\s+your\s+back',
+        
+        // Harassment and slurs (add specific terms as needed)
+        '\b(threat|die|死|殺)\b',
+        
+        // Extortion language
+        '(pay|send)\s+(money|bitcoin|crypto|btc)',
+        'or\s+else',
+        'consequences',
+        
+        // Explicit content indicators
+        'explicit',
+        'nsfw',
+        '18\+',
+        'xxx'
+      )
     )
   )
-  // Reduce false positives
-  and not sender.email.domain.domain in $org_domains
-  and not any(headers.hops, .authentication_results.dmarc == "pass" and .authentication_results.dmarc_details.from.domain in $org_domains)
 
 tags:
   - "Attack Type: Harassment"
   - "Attack Type: Threat"
-  - "Attack Type: Extortion"
-  - "Detection Method: OCR"
-  - "Requires Review"
+  - "Attack Type: Offensive Content"
+  - "Detection: OCR"
 
 attack_types:
   - "Harassment"
   - "Threat"
-  - "Extortion"
+  
+tactics_and_techniques:
+  - "T1566: Phishing"
+  - "T1204: User Execution"
