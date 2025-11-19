@@ -1,34 +1,15 @@
-name: "OCR Detection - Offensive Content in Images"
-description: "Scans images in emails using OCR to detect offensive, threatening, or inappropriate text content"
-type: rule
+name: Offensive text in message screenshot (OCR)
 severity: medium
-authors:
-  - "Security Team"
-
+description: >
+  Flags inbound emails where OCR of the rendered message screenshot
+  contains offensive or explicit terms.
+tags:
+  - OCR
+  - content-policy
 source: |
   type.inbound
-  and any(attachments,
-    (
-      .file_type in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp")
-      or .file_extension in~ ("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp")
-    )
-    and (
-      // Threats and violence
-      regex.icontains(beta.ocr_text(.), '(kill|murder|shoot|bomb|attack|destroy)\s+(you|your|them)')
-      or regex.icontains(beta.ocr_text(.), 'i.ll\s+(kill|hurt|get|find)\s+you')
-      or regex.icontains(beta.ocr_text(.), 'you.re\s+dead')
-      or regex.icontains(beta.ocr_text(.), 'watch\s+your\s+back')
-      
-      // Extortion language
-      or regex.icontains(beta.ocr_text(.), '(pay|send)\s+(money|bitcoin|crypto|btc)')
-      or regex.icontains(beta.ocr_text(.), 'or\s+else')
-      
-      // Explicit content indicators
-      or regex.icontains(beta.ocr_text(.), '\b(nsfw|xxx|explicit)\b')
-    )
-  )
+  and regex.icontains(
+        beta.ocr(file.message_screenshot()).text,
+        "(offensive_word_1|offensive_word_2|offensive_phrase)"
+      )
 
-tags:
-  - "Attack Type: Harassment"
-  - "Attack Type: Threat"
-  - "Detection: OCR"
