@@ -1,0 +1,44 @@
+name: "Mismatched URL vs visible link"
+description: >
+  Detects inbound emails where at least one link's visible URL does not match
+  the actual destination (classic phishing / link spoofing behavior).
+type: "rule"
+severity: "medium"
+
+source: |
+  // Only look at inbound mail
+  type.inbound
+
+  // At least one mismatched link in the body
+  and any(
+    body.links,
+    .mismatched
+    // (Optional) require both sides to be valid and truly different domains
+    and .display_url.domain.valid
+    and .href_url.domain.valid
+    and .display_url.domain.root_domain != .href_url.domain.root_domain
+
+    // (Optional) ignore common secure/relay gateways that legitimately rewrite URLs
+    and not .href_url.domain.root_domain in (
+      "mimecast.com",
+      "mimecastprotect.com",
+      "proofpoint.com",
+      "urldefense.com",
+      "trendmicro.com"
+    )
+  )
+
+tags:
+  - "Attack surface reduction"
+  - "URL mismatch"
+  - "Link manipulation"
+
+attack_types:
+  - "Credential Phishing"
+  - "BEC/Fraud"
+  - "Malware/Ransomware"
+
+detection_methods:
+  - "URL analysis"
+  - "HTML analysis"
+  - "Content analysis"
