@@ -1,15 +1,7 @@
-name: Offensive text in message screenshot (OCR)
-severity: medium
-description: >
-  Flags inbound emails where OCR of the rendered message screenshot
-  contains offensive or explicit terms.
-tags:
-  - OCR
-  - content-policy
-source: |
-  type.inbound
-  and regex.icontains(
-        beta.ocr(file.message_screenshot()).text,
-        "(offensive_word_1|offensive_word_2|offensive_phrase)"
-      )
+type.inbound
+and any(attachments, .file_extension == "pdf" and
+    any(file.explode(.), 
+        any(.scan.strings.strings, strings.icontains(., "badwords"))
+    )
+)
 
