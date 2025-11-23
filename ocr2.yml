@@ -1,7 +1,6 @@
 type.inbound
 and any(attachments, .file_extension == "pdf" and
     any(file.explode(.), 
-        any(.scan.strings.strings, strings.icontains(., "badwords"))
+        any(.scan.strings.strings, strings.icontains(., "norton"))
     )
 )
-
