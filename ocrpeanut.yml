@@ -1,0 +1,32 @@
+name: Detect "peanut" text in images via OCR
+description: >
+  Flags inbound emails where OCR detects the word "peanut" inside image
+  attachments or embedded images (e.g., JPG, PNG, GIF, etc.).
+type: detection
+severity: medium
+
+tags:
+  - ocr
+  - attachment
+  - image
+  - dlp
+  - content-analysis
+
+attack_types:
+  - Data exfiltration
+
+tactics_and_techniques:
+  - Content analysis
+  - Evasion
+
+detection_methods:
+  - Optical Character Recognition
+
+source: |
+  type.inbound
+  and any(attachments,
+    .file_extension in~ ("jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff", "webp", "heic")
+      and any(file.explode(.),
+        strings.icontains(.scan.ocr.raw, "peanut")
+      )
+  )
