@@ -1,8 +1,10 @@
-name: Detect "peanut" text in images via OCR
+name: Detect allergen keywords in OCR'd images
 description: >
-  Flags inbound emails where OCR detects the word "peanut" inside image
-  attachments or embedded images (e.g., JPG, PNG, GIF, etc.).
-type: detection
+  Flags inbound emails where OCR on image attachments or embedded images
+  detects common food allergen keywords (e.g., peanut, tree nuts, dairy,
+  egg, wheat, soy, fish, shellfish, sesame).
+
+type: rule
 severity: medium
 
 tags:
@@ -10,23 +12,32 @@ tags:
   - attachment
   - image
   - dlp
+  - allergens
   - content-analysis
 
 attack_types:
-  - Data exfiltration
+  - Data Loss Prevention
 
 tactics_and_techniques:
   - Content analysis
+  - Image as content
   - Evasion
 
 detection_methods:
   - Optical Character Recognition
+  - Computer Vision
+  - Content analysis
 
 source: |
   type.inbound
   and any(attachments,
     .file_extension in~ ("jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff", "webp", "heic")
-      and any(file.explode(.),
-        strings.icontains(.scan.ocr.raw, "peanut")
+    and any(file.explode(.),
+      .scan.ocr.raw != null
+      and regex.icontains(
+        .scan.ocr.raw,
+        "(?i)(peanut|peanuts|tree nut|tree nuts|almond|almonds|walnut|walnuts|cashew|cashews|pistachio|pistachios|pecan|pecans|hazelnut|hazelnuts|brazil nut|brazil nuts|macadamia|macadamias|milk|dairy|lactose|cheese|butter|cream|egg|eggs|wheat|gluten|barley|rye|soy|soya|soybean|soybeans|tofu|fish|salmon|tuna|cod|shellfish|shrimp|prawn|prawns|crab|lobster|mussel|mussels|clam|clams|oyster|oysters|scallop|scallops|sesame|sesame seed|sesame seeds|tahini|mustard|celery|lupin|sulfite|sulfites|sulphite|sulphites)"
       )
+    )
   )
+
